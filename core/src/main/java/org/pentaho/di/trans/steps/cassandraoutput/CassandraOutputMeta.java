@@ -131,6 +131,9 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
   @Injection( name = "SOCKET_TIMEOUT" )
   protected String m_socketTimeout = ""; //$NON-NLS-1$
 
+  @Injection( name = "SSL" )
+  protected boolean m_ssl = false;
+
   /**
    * Timeout (milliseconds) to use for CQL batch inserts. If blank, no timeout is used. Otherwise, whent the timeout
    * occurs the step will try to kill the insert and re-try after splitting the batch according to the batch split
@@ -275,6 +278,15 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
    */
   public void setCQLSubBatchSize( String f ) {
     m_cqlSubBatchSize = f;
+  }
+
+
+  public boolean isM_ssl() {
+    return m_ssl;
+  }
+
+  public void setM_ssl( boolean m_ssl ) {
+    this.m_ssl = m_ssl;
   }
 
   /**
@@ -790,6 +802,10 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
             m_insertFieldsNotInMeta ) );
 
     retval.append( "\n    " ).append( //$NON-NLS-1$
+      XMLHandler.addTagValue( "ssl", //$NON-NLS-1$
+        m_ssl ) );
+
+    retval.append( "\n    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "update_cassandra_meta", m_updateCassandraMeta ) ); //$NON-NLS-1$
 
     retval.append( "\n    " ).append( //$NON-NLS-1$
@@ -836,6 +852,7 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
     if ( !Utils.isEmpty( m_password ) ) {
       m_password = Encr.decryptPasswordOptionallyEncrypted( m_password );
     }
+    m_ssl = "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "ssl" ) );
     m_cassandraKeyspace = XMLHandler.getTagValue( stepnode, "cassandra_keyspace" ); //$NON-NLS-1$
     m_table = XMLHandler.getTagValue( stepnode, "table" ); //$NON-NLS-1$
     m_keyField = XMLHandler.getTagValue( stepnode, "key_field" ); //$NON-NLS-1$
@@ -893,6 +910,7 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
     if ( !Utils.isEmpty( m_password ) ) {
       m_password = Encr.decryptPasswordOptionallyEncrypted( m_password );
     }
+    m_ssl = rep.getStepAttributeBoolean( id_step, 0, "ssl" );
     m_cassandraKeyspace = rep.getStepAttributeString( id_step, 0, "cassandra_keyspace" ); //$NON-NLS-1$
     m_table = rep.getStepAttributeString( id_step, 0, "table" ); //$NON-NLS-1$
     // try legacy identifier if table does not work
@@ -979,6 +997,8 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
     if ( !Utils.isEmpty( m_cassandraKeyspace ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "cassandra_keyspace", m_cassandraKeyspace ); //$NON-NLS-1$
     }
+
+    rep.saveStepAttribute( id_transformation, id_step, 0, "ssl", m_ssl );
 
     if ( !Utils.isEmpty( m_table ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "table", //$NON-NLS-1$
@@ -1087,6 +1107,7 @@ public class CassandraOutputMeta extends BaseStepMeta implements StepMetaInterfa
     m_updateCassandraMeta = false;
     m_truncateTable = false;
     m_aprioriCQL = ""; //$NON-NLS-1$
+    m_ssl = false;
   }
 
   /*

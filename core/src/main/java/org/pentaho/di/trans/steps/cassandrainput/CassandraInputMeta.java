@@ -22,19 +22,14 @@
 
 package org.pentaho.di.trans.steps.cassandrainput;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.eclipse.swt.widgets.Shell;
-import org.pentaho.cassandra.util.CassandraUtils;
 import org.pentaho.cassandra.ConnectionFactory;
-import org.pentaho.cassandra.util.CQLUtils;
-import org.pentaho.cassandra.util.Selector;
-import org.pentaho.cassandra.spi.ITableMetaData;
 import org.pentaho.cassandra.spi.Connection;
+import org.pentaho.cassandra.spi.ITableMetaData;
 import org.pentaho.cassandra.spi.Keyspace;
+import org.pentaho.cassandra.util.CQLUtils;
+import org.pentaho.cassandra.util.CassandraUtils;
+import org.pentaho.cassandra.util.Selector;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -61,6 +56,11 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class providing an input step for reading data from an Cassandra table
@@ -128,6 +128,9 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
   @Injection( name = "SOCKET_TIMEOUT" )
   protected String m_socketTimeout = ""; //$NON-NLS-1$
 
+  @Injection( name = "SSL" )
+  protected boolean m_ssl = false;
+
   /**
    * Max size of the object can be transported - blank means use default (16384000)
    */
@@ -191,6 +194,14 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
    */
   public String getSocketTimeout() {
     return m_socketTimeout;
+  }
+
+  public boolean isM_ssl() {
+    return m_ssl;
+  }
+
+  public void setM_ssl( boolean m_ssl ) {
+    this.m_ssl = m_ssl;
   }
 
   /**
@@ -378,6 +389,9 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
         .append( XMLHandler.addTagValue( "socket_timeout", m_socketTimeout ) ); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
+    retval.append( "\n    " )
+      .append( XMLHandler.addTagValue( "ssl", m_ssl ) ); //$NON-NLS-1$ //$NON-NLS-2$
+
     if ( !Utils.isEmpty( m_maxLength ) ) {
       retval.append( "\n    " )
         .append( XMLHandler.addTagValue( "max_length", m_maxLength ) ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -403,6 +417,7 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
     m_cqlSelectQuery = XMLHandler.getTagValue( stepnode, "cql_select_query" ); //$NON-NLS-1$
     m_useCompression =
       XMLHandler.getTagValue( stepnode, "use_compression" ).equalsIgnoreCase( "Y" ); //$NON-NLS-1$ //$NON-NLS-2$
+    m_ssl = "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "ssl" ) );
 
     String executeForEachR = XMLHandler.getTagValue( stepnode, "execute_for_each_row" ); //$NON-NLS-1$
     if ( !Utils.isEmpty( executeForEachR ) ) {
@@ -430,6 +445,7 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
 
     m_socketTimeout = rep.getStepAttributeString( id_step, 0, "socket_timeout" ); //$NON-NLS-1$
     m_maxLength = rep.getStepAttributeString( id_step, 0, "max_length" ); //$NON-NLS-1$
+    m_ssl = rep.getStepAttributeBoolean( id_step, 0, "ssl" );
   }
 
   @Override
@@ -456,6 +472,7 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
     }
 
     rep.saveStepAttribute( id_transformation, id_step, 0, "use_compression", m_useCompression ); //$NON-NLS-1$
+    rep.saveStepAttribute( id_transformation, id_step, 0, "ssl", m_ssl );
 
     if ( !Utils.isEmpty( m_cqlSelectQuery ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "cql_select_query", m_cqlSelectQuery ); //$NON-NLS-1$
@@ -493,6 +510,7 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
     m_useCompression = false;
     m_socketTimeout = ""; //$NON-NLS-1$
     m_maxLength = ""; //$NON-NLS-1$
+    m_ssl = false;
   }
 
   @Override
@@ -625,6 +643,9 @@ public class CassandraInputMeta extends BaseStepMeta implements StepMetaInterfac
 
         Map<String, String> opts = new HashMap<String, String>();
         opts.put( CassandraUtils.CQLOptions.DATASTAX_DRIVER_VERSION, CassandraUtils.CQLOptions.CQL3_STRING );
+        if ( m_ssl ) {
+          opts.put( CassandraUtils.ConnectionOptions.SSL, "Y" );
+        }
 
         conn =
           CassandraUtils.getCassandraConnection( hostS, Integer.parseInt( portS ), userS, passS,

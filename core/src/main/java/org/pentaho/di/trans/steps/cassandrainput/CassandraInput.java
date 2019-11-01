@@ -47,7 +47,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 /**
  * Class providing an input step for reading data from a table in Cassandra. Accesses the schema
  * information stored in Cassandra for type information.
- * 
+ *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision$
  */
@@ -131,6 +131,10 @@ public class CassandraInput extends BaseStep implements StepInterface {
 
         if ( !Utils.isEmpty( timeoutS ) ) {
           opts.put( CassandraUtils.ConnectionOptions.SOCKET_TIMEOUT, timeoutS );
+        }
+
+        if ( m_meta.isM_ssl() ) {
+          opts.put( CassandraUtils.ConnectionOptions.SSL, "Y" );
         }
 
         if ( !Utils.isEmpty( maxLength ) ) {

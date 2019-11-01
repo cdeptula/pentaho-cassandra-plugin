@@ -85,6 +85,11 @@ public class CassandraInputMetaInjectionTest extends BaseMetadataInjectionTest<C
         return meta.getMaxLength();
       }
     } );
+    check( "SSL", new BooleanGetter() {
+      @Override public boolean get() {
+        return meta.isM_ssl();
+      }
+    } );
   }
 
 }

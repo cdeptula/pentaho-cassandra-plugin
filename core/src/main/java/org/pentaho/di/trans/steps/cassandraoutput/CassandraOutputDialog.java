@@ -64,6 +64,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.ui.core.FormDataBuilder;
 import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
@@ -73,7 +74,7 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
 /**
  * Dialog class for the CassandraOutput step
- * 
+ *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class CassandraOutputDialog extends BaseStepDialog implements StepDialogInterface {
@@ -101,6 +102,8 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
   private TextVar m_userText;
   private Label m_passLab;
   private TextVar m_passText;
+
+  private Button m_ssl;
 
   private Label m_socketTimeoutLab;
   private TextVar m_socketTimeoutText;
@@ -291,13 +294,22 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
     fd.left = new FormAttachment( middle, 0 );
     m_portText.setLayoutData( fd );
 
+    Label lSsl = new Label( wConnectionComp, SWT.RIGHT );
+    props.setLook( lSsl );
+    lSsl.setText( BaseMessages.getString( PKG, "CassandraOutputDialog.Ssl.Label" ) );
+    lSsl.setLayoutData( new FormDataBuilder().left( 0, 0 ).top( m_portText, margin ).right( middle, -margin ).result() );
+
+    m_ssl = new Button( wConnectionComp, SWT.CHECK | SWT.BORDER | SWT.LEFT );
+    props.setLook( m_ssl );
+    m_ssl.setLayoutData( new FormDataBuilder().left( middle, 0 ).top( m_portText, margin ).right( 100, 0 ).result() );
+
     // socket timeout line
     m_socketTimeoutLab = new Label( wConnectionComp, SWT.RIGHT );
     props.setLook( m_socketTimeoutLab );
     m_socketTimeoutLab.setText( BaseMessages.getString( PKG, "CassandraOutputDialog.SocketTimeout.Label" ) ); //$NON-NLS-1$
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
-    fd.top = new FormAttachment( m_portText, margin );
+    fd.top = new FormAttachment( m_ssl, margin );
     fd.right = new FormAttachment( middle, -margin );
     m_socketTimeoutLab.setLayoutData( fd );
 
@@ -312,7 +324,7 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
     m_socketTimeoutText.addModifyListener( lsMod );
     fd = new FormData();
     fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( m_portText, margin );
+    fd.top = new FormAttachment( m_ssl, margin );
     fd.left = new FormAttachment( middle, 0 );
     m_socketTimeoutText.setLayoutData( fd );
 
@@ -1020,6 +1032,9 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
 
       try {
         Map<String, String> opts = new HashMap<String, String>();
+        if ( m_ssl.getSelection() ) {
+          opts.put( CassandraUtils.ConnectionOptions.SSL, "Y" );
+        }
         opts.put( CassandraUtils.CQLOptions.DATASTAX_DRIVER_VERSION, CassandraUtils.CQLOptions.CQL3_STRING );
         conn =
             CassandraUtils.getCassandraConnection( hostS, Integer.parseInt( portS ), userS, passS,
@@ -1188,6 +1203,7 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
     m_currentMeta.setCreateTableClause( m_withClauseText.getText() );
     m_currentMeta.setDontComplainAboutAprioriCQLFailing( m_dontComplain );
     m_currentMeta.setUseUnloggedBatches( m_unloggedBatchBut.getSelection() );
+    m_currentMeta.setM_ssl( m_ssl.getSelection() );
 
     m_currentMeta.setTTL( m_ttlValueText.getText() );
     m_currentMeta.setTTLUnit( m_ttlUnitsCombo.getText() );
@@ -1235,6 +1251,9 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
       try {
         Map<String, String> opts = new HashMap<String, String>();
         opts.put( CassandraUtils.CQLOptions.DATASTAX_DRIVER_VERSION, CassandraUtils.CQLOptions.CQL3_STRING );
+        if ( m_ssl.getSelection() ) {
+          opts.put( CassandraUtils.ConnectionOptions.SSL, "Y" );
+        }
 
         conn = CassandraUtils.getCassandraConnection( hostS, Integer.parseInt( portS ), userS, passS,
             ConnectionFactory.Driver.BINARY_CQL3_PROTOCOL,
@@ -1378,5 +1397,6 @@ public class CassandraOutputDialog extends BaseStepDialog implements StepDialogI
       m_ttlUnitsCombo.setText( m_currentMeta.getTTLUnit() );
       m_ttlValueText.setEnabled( m_ttlUnitsCombo.getSelectionIndex() > 0 );
     }
+    m_ssl.setSelection( m_currentMeta.isM_ssl() );
   }
 }

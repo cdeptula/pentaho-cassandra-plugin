@@ -60,6 +60,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransPreviewFactory;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
+import org.pentaho.di.ui.core.FormDataBuilder;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterNumberDialog;
 import org.pentaho.di.ui.core.dialog.EnterTextDialog;
@@ -107,6 +108,8 @@ public class CassandraInputDialog extends BaseStepDialog implements StepDialogIn
 
   private Label m_compressionLab;
   private Button m_useCompressionBut;
+
+  private Button m_useSslBut;
 
   private Label m_timeoutLab;
   private TextVar m_timeoutText;
@@ -233,13 +236,22 @@ public class CassandraInputDialog extends BaseStepDialog implements StepDialogIn
     fd.left = new FormAttachment( middle, 0 );
     m_portText.setLayoutData( fd );
 
+    Label lSsl = new Label( shell, SWT.RIGHT );
+    props.setLook( lSsl );
+    lSsl.setText( BaseMessages.getString( PKG, "CassandraInputDialog.Ssl.Label" ) );
+    lSsl.setLayoutData( new FormDataBuilder().left( 0, 0 ).top( m_portText, margin ).right( middle, -margin ).result() );
+
+    m_useSslBut = new Button( shell, SWT.CHECK | SWT.LEFT | SWT.BORDER );
+    props.setLook( m_useSslBut );
+    m_useSslBut.setLayoutData( new FormDataBuilder().left( middle, 0 ).right( 100, 0 ).top( m_portText, margin ).result() );
+
     // timeout line
     m_timeoutLab = new Label( shell, SWT.RIGHT );
     props.setLook( m_timeoutLab );
     m_timeoutLab.setText( BaseMessages.getString( PKG, "CassandraInputDialog.Timeout.Label" ) ); //$NON-NLS-1$
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
-    fd.top = new FormAttachment( m_portText, margin );
+    fd.top = new FormAttachment( m_useSslBut, margin );
     fd.right = new FormAttachment( middle, -margin );
     m_timeoutLab.setLayoutData( fd );
 
@@ -254,7 +266,7 @@ public class CassandraInputDialog extends BaseStepDialog implements StepDialogIn
     m_timeoutText.addModifyListener( lsMod );
     fd = new FormData();
     fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( m_portText, margin );
+    fd.top = new FormAttachment( m_useSslBut, margin );
     fd.left = new FormAttachment( middle, 0 );
     m_timeoutText.setLayoutData( fd );
 
@@ -567,6 +579,7 @@ public class CassandraInputDialog extends BaseStepDialog implements StepDialogIn
     meta.setUseCompression( m_useCompressionBut.getSelection() );
     meta.setCQLSelectQuery( m_cqlText.getText() );
     meta.setExecuteForEachIncomingRow( m_executeForEachRowBut.getSelection() );
+    meta.setM_ssl( m_useSslBut.getSelection() );
   }
 
   protected void ok() {
@@ -623,6 +636,7 @@ public class CassandraInputDialog extends BaseStepDialog implements StepDialogIn
 
     m_useCompressionBut.setSelection( m_currentMeta.getUseCompression() );
     m_executeForEachRowBut.setSelection( m_currentMeta.getExecuteForEachIncomingRow() );
+    m_useSslBut.setSelection( m_currentMeta.isM_ssl() );
 
     if ( !Utils.isEmpty( m_currentMeta.getCQLSelectQuery() ) ) {
       m_cqlText.setText( m_currentMeta.getCQLSelectQuery() );
@@ -729,6 +743,9 @@ public class CassandraInputDialog extends BaseStepDialog implements StepDialogIn
       try {
         Map<String, String> opts = new HashMap<String, String>();
         opts.put( CassandraUtils.CQLOptions.DATASTAX_DRIVER_VERSION, CassandraUtils.CQLOptions.CQL3_STRING );
+        if ( m_useSslBut.getSelection() ) {
+          opts.put( CassandraUtils.ConnectionOptions.SSL, "Y" );
+        }
 
         conn =
             CassandraUtils.getCassandraConnection( hostS, Integer.parseInt( portS ), userS, passS,

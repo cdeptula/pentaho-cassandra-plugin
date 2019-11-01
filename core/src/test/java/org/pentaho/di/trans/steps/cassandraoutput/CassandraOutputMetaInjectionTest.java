@@ -160,6 +160,11 @@ public class CassandraOutputMetaInjectionTest extends BaseMetadataInjectionTest<
         return meta.getTTLUnit();
       }
     } );
+    check( "SSL", new BooleanGetter() {
+      @Override public boolean get() {
+        return meta.isM_ssl();
+      }
+    } );
   }
 
 }

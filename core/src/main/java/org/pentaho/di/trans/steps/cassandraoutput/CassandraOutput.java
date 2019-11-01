@@ -48,7 +48,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 /**
  * Class providing an output step for writing data to a cassandra table. Can create the specified
  * table (if it doesn't already exist) and can update table meta data.
- * 
+ *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class CassandraOutput extends BaseStep implements StepInterface {
@@ -458,6 +458,10 @@ public class CassandraOutput extends BaseStep implements StepInterface {
     m_opts = new HashMap<String, String>();
     if ( !Utils.isEmpty( timeoutS ) ) {
       m_opts.put( CassandraUtils.ConnectionOptions.SOCKET_TIMEOUT, timeoutS );
+    }
+
+    if ( m_meta.isM_ssl() ) {
+      m_opts.put( CassandraUtils.ConnectionOptions.SSL, "Y" );
     }
 
     m_opts.put( CassandraUtils.BatchOptions.BATCH_TIMEOUT, "" //$NON-NLS-1$

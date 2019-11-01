@@ -24,6 +24,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.datastax.driver.core.RemoteEndpointAwareJdkSSLOptions;
+import com.datastax.driver.core.SSLOptions;
 import org.apache.commons.lang.StringUtils;
 import org.pentaho.cassandra.util.CassandraUtils;
 import org.pentaho.cassandra.spi.Connection;
@@ -39,6 +41,8 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.TypeCodec;
 import com.datastax.driver.extras.codecs.MappingCodec;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * connection using standard datastax driver<br>
@@ -135,6 +139,9 @@ public class DriverConnection implements Connection, AutoCloseable {
       if ( opts.containsKey( CassandraUtils.ConnectionOptions.SOCKET_TIMEOUT ) ) {
         int timeoutMs = Integer.parseUnsignedInt( opts.get( CassandraUtils.ConnectionOptions.SOCKET_TIMEOUT ).trim() );
         builder.withSocketOptions( new SocketOptions().setConnectTimeoutMillis( timeoutMs ) );
+      }
+      if ( opts.containsKey( CassandraUtils.ConnectionOptions.SSL ) ) {
+        builder.withSSL();
       }
       builder.withCompression( useCompression ? ProtocolOptions.Compression.LZ4 : ProtocolOptions.Compression.NONE );
       cluster = builder.build();
